@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calculadora de Variable Comercial — OMRON</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800&family=Barlow+Condensed:wght@600;700&display=swap');
+  :root{
+    --omron-dark:#003153;
+    --omron-mid:#0066CC;
+    --omron-light:#00A3E0;
+    --ink:#0B1F33;
+    --paper:#F5F8FB;
+    --card:#FFFFFF;
+    --line:#DCE6F0;
+    --hairline:#C9C9C9;
+    --ok:#1E9E5A;
+    --warn:#E0A200;
+    --bad:#C4392B;
+    --muted:#5B7085;
+    --shadow-sm:0 1px 2px rgba(0,49,83,0.06);
+    --shadow-md:0 4px 16px rgba(0,49,83,0.08);
+    --ease:cubic-bezier(.4,0,.2,1);
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;background:var(--paper);color:var(--ink);
+    font-family:'Barlow','Segoe UI',-apple-system,Roboto,Helvetica,Arial,sans-serif;
+    line-height:1.4;
+  }
+  input, button{font-family:inherit;}
+  input[type=text]:focus, input[type=number]:focus{
+    outline:none;border-color:var(--omron-mid);box-shadow:0 0 0 3px rgba(0,102,204,0.12);
+  }
+  input[type=text], input[type=number]{transition:border-color .15s var(--ease), box-shadow .15s var(--ease);}
+  .page{max-width:1180px;margin:0 auto;padding:0 24px 70px;}
+
+  header.top{
+    background:var(--omron-dark);
+    color:#fff;padding:30px 24px 0;margin-bottom:26px;
+    border-top:1px solid var(--hairline);
+    position:relative;
+  }
+  header.top::after{
+    content:"";display:block;height:3px;margin-top:26px;
+    background:linear-gradient(90deg,var(--omron-light),var(--omron-mid) 40%,transparent);
+  }
+  header.top .inner{max-width:1180px;margin:0 auto;display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:14px;padding-bottom:26px;}
+  .wordmark{display:flex;align-items:center;gap:10px;font-weight:800;font-size:20px;font-family:'Barlow Condensed','Barlow',sans-serif;letter-spacing:0.5px;}
+  .wordmark .dot{width:10px;height:10px;border-radius:50%;background:var(--omron-light);}
+  .wordmark .tag{font-weight:500;font-size:12px;opacity:0.85;letter-spacing:1.2px;text-transform:uppercase;margin-left:2px;font-family:'Barlow',sans-serif;}
+  header.top h1{font-size:24px;margin:6px 0 0;font-weight:700;letter-spacing:-0.2px;}
+  .io-col{display:flex;flex-direction:column;align-items:flex-end;gap:6px;}
+  .io-buttons{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;}
+  .io-buttons button{
+    background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.35);color:#fff;
+    padding:8px 14px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;
+    transition:background .15s var(--ease), transform .15s var(--ease);
+  }
+  .io-buttons button:hover{background:rgba(255,255,255,0.24);transform:translateY(-1px);}
+  .io-buttons button:active{transform:translateY(0);}
+  .io-buttons button.cloud{background:var(--omron-light);border-color:var(--omron-light);color:var(--omron-dark);font-weight:700;}
+  .io-buttons button.cloud:hover{background:#33B7E8;}
+  .sync-status{font-size:11.5px;opacity:0.8;letter-spacing:0.2px;}
+  .sync-status.ok{color:#8FE3B5;opacity:1;}
+  .sync-status.err{color:#F5B5AC;opacity:1;}
+
+  section{margin-bottom:28px;}
+  h2.section-title{
+    font-size:12.5px;text-transform:uppercase;letter-spacing:1.1px;color:var(--omron-mid);
+    font-weight:700;margin:0 0 12px;display:flex;align-items:center;gap:8px;
+  }
+  h2.section-title::before{content:"";width:16px;height:3px;background:var(--omron-light);border-radius:2px;display:inline-block;}
+
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px 22px;box-shadow:var(--shadow-sm);transition:box-shadow .2s var(--ease);}
+  .card:hover{box-shadow:var(--shadow-md);}
+
+  /* VARIABLES CONFIG */
+  table.varconf{width:100%;border-collapse:collapse;}
+  table.varconf th{text-align:left;font-size:11px;text-transform:uppercase;color:var(--muted);letter-spacing:0.5px;padding:6px 8px;border-bottom:2px solid var(--line);}
+  table.varconf td{padding:7px 8px;border-bottom:1px solid var(--line);}
+  table.varconf input[type=text]{width:100%;border:1px solid var(--line);border-radius:6px;padding:6px 8px;font-size:13.5px;}
+  table.varconf input[type=number]{width:80px;border:1px solid var(--line);border-radius:6px;padding:6px 8px;font-size:13.5px;text-align:right;}
+  .del-btn{background:none;border:none;color:var(--bad);cursor:pointer;font-size:16px;line-height:1;padding:4px 6px;border-radius:6px;}
+  .del-btn:hover{background:#FBE7E4;}
+  .weight-sum{margin-top:10px;font-size:13px;font-weight:600;display:flex;align-items:center;gap:8px;}
+  .weight-sum .badge{padding:3px 9px;border-radius:6px;font-size:12.5px;font-weight:700;transition:background .2s var(--ease), color .2s var(--ease);}
+  .badge-ok{background:#E4F6EC;color:var(--ok);}
+  .badge-warn{background:#FCF0D9;color:var(--warn);}
+  .add-row{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;}
+  .add-row input[type=text]{flex:1;min-width:180px;border:1px solid var(--line);border-radius:6px;padding:8px 10px;font-size:13.5px;}
+  .add-row input[type=number]{width:90px;border:1px solid var(--line);border-radius:6px;padding:8px 10px;font-size:13.5px;}
+  .btn-primary{background:var(--omron-mid);color:#fff;border:none;border-radius:6px;padding:9px 18px;font-size:13.5px;font-weight:700;cursor:pointer;transition:background .15s var(--ease), transform .15s var(--ease);}
+  .btn-primary:hover{background:var(--omron-dark);transform:translateY(-1px);}
+  .btn-primary:active{transform:translateY(0);}
+
+  /* PEOPLE TABLE */
+  .table-scroll{overflow-x:auto;}
+  table.people{border-collapse:collapse;width:100%;min-width:700px;}
+  table.people th{
+    text-align:left;font-size:11px;text-transform:uppercase;color:var(--muted);letter-spacing:0.4px;
+    padding:8px;border-bottom:2px solid var(--line);white-space:nowrap;
+  }
+  table.people th.var-th{text-align:center;color:var(--omron-dark);}
+  table.people td{padding:8px;border-bottom:1px solid var(--line);vertical-align:middle;}
+  table.people tbody tr{transition:background .12s var(--ease);}
+  table.people tbody tr:nth-child(even){background:#FAFCFE;}
+  table.people tbody tr:hover{background:#EEF4FB;}
+  table.people input[type=text]{width:120px;border:1px solid var(--line);border-radius:6px;padding:6px 8px;font-size:13.5px;background:#fff;}
+  table.people input[type=number]{width:64px;border:1px solid var(--line);border-radius:6px;padding:6px 6px;font-size:13px;text-align:right;background:#fff;}
+  .pair{display:flex;gap:4px;align-items:center;justify-content:center;}
+  .pair span{color:var(--muted);font-size:11px;}
+  .score-cell{font-weight:800;font-size:14.5px;text-align:center;}
+  .result-pill{display:inline-block;padding:4px 11px;border-radius:20px;font-size:12px;font-weight:700;color:#fff;white-space:nowrap;box-shadow:var(--shadow-sm);}
+  .r-full{background:var(--ok);} .r-mid{background:var(--omron-mid);} .r-low{background:var(--warn);} .r-none{background:var(--bad);}
+
+  .add-person{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;}
+  .add-person input[type=text]{border:1px solid var(--line);border-radius:6px;padding:8px 10px;font-size:13.5px;}
+
+  /* LEGEND */
+  .legend{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;}
+  .legend .item{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--ink);background:#F5F8FB;border:1px solid var(--line);padding:5px 10px 5px 8px;border-radius:20px;}
+  .legend .sw{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+
+  footer{color:var(--muted);font-size:12px;text-align:center;padding-top:16px;border-top:1px solid var(--line);margin-top:10px;}
+  #importFile{display:none;}
+
+  /* HISTORICO */
+  .btn-secondary{background:#EEF4FB;color:var(--omron-dark);border:1px solid var(--line);border-radius:6px;padding:6px 12px;font-size:12.5px;font-weight:700;cursor:pointer;transition:background .15s var(--ease);}
+  .btn-secondary:hover{background:#E1EDF9;}
+  .hist-empty{color:var(--muted);font-size:13.5px;margin:0;}
+  .hist-entry{border:1px solid var(--line);border-radius:10px;margin-bottom:10px;overflow:hidden;transition:box-shadow .15s var(--ease);}
+  .hist-entry:hover{box-shadow:var(--shadow-sm);}
+  .hist-header{display:flex;justify-content:space-between;align-items:center;padding:13px 16px;cursor:pointer;background:#FAFCFE;gap:10px;flex-wrap:wrap;transition:background .12s var(--ease);}
+  .hist-header:hover{background:#F1F6FB;}
+  .hist-meta{color:var(--muted);font-size:12px;font-weight:400;margin-left:6px;}
+  .hist-actions{display:flex;gap:6px;align-items:center;}
+  .hist-detail{padding:0 16px 16px;}
+  table.calc-hist{width:100%;border-collapse:collapse;margin-top:4px;}
+  table.calc-hist th{text-align:left;font-size:11px;text-transform:uppercase;color:var(--muted);letter-spacing:0.4px;padding:6px 8px;border-bottom:2px solid var(--line);}
+  table.calc-hist td{padding:7px 8px;border-bottom:1px solid var(--line);font-size:13.5px;}
+  table.calc-hist tbody tr:nth-child(even){background:#FAFCFE;}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="inner">
+    <div>
+      <div class="wordmark"><span class="dot"></span>OMRON<span class="tag">Fuerza de Ventas</span></div>
+      <h1>Calculadora de Variable Comercial</h1>
+    </div>
+    <div class="io-col">
+      <div class="io-buttons">
+        <button class="cloud" onclick="saveToFirebase()">☁ Guardar en la nube</button>
+        <button onclick="loadFromFirebase(false)">Cargar de la nube</button>
+        <button onclick="exportData()">Exportar .json</button>
+        <button onclick="document.getElementById('importFile').click()">Importar .json</button>
+        <input type="file" id="importFile" accept="application/json">
+      </div>
+      <div class="sync-status" id="syncStatus">Sin sincronizar todavía</div>
+    </div>
+  </div>
+</header>
+
+<div class="page">
+
+  <section>
+    <h2 class="section-title">Variables y ponderación</h2>
+    <div class="card">
+      <table class="varconf" id="varTable">
+        <thead><tr><th style="width:60%">Variable</th><th>Peso (%)</th><th></th></tr></thead>
+        <tbody id="varTableBody"></tbody>
+      </table>
+      <div class="weight-sum" id="weightSum"></div>
+      <div class="add-row">
+        <input type="text" id="newVarName" placeholder="Nombre de la nueva variable">
+        <input type="number" id="newVarWeight" placeholder="Peso %" min="0" max="100">
+        <button class="btn-primary" onclick="addVariable()">+ Agregar variable</button>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2 class="section-title">Equipo</h2>
+    <div class="card">
+      <div class="table-scroll">
+        <table class="people" id="peopleTable">
+          <thead><tr id="peopleHead"></tr></thead>
+          <tbody id="peopleBody"></tbody>
+        </table>
+      </div>
+      <div class="add-person">
+        <input type="text" id="newPersonName" placeholder="Nombre">
+        <input type="text" id="newPersonTerr" placeholder="Territorio (opcional)">
+        <button class="btn-primary" onclick="addPerson()">+ Agregar persona</button>
+      </div>
+      <div class="legend">
+        <span class="item"><span class="sw" style="background:var(--ok)"></span>≥ 90 pts → 100% de la variable</span>
+        <span class="item"><span class="sw" style="background:var(--omron-mid)"></span>80–89,9 pts → 75%</span>
+        <span class="item"><span class="sw" style="background:var(--warn)"></span>70–79,9 pts → 50%</span>
+        <span class="item"><span class="sw" style="background:var(--bad)"></span>&lt; 70 pts → No cobra</span>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2 class="section-title">Histórico</h2>
+    <div class="card">
+      <div class="add-row">
+        <input type="text" id="newHistLabel" placeholder="Nombre del período (ej: Julio 2026)">
+        <button class="btn-primary" onclick="saveHistory()">+ Guardar período actual</button>
+      </div>
+      <div id="historyList" style="margin-top:14px;"></div>
+    </div>
+  </section>
+
+  <footer>Proven · Cuenta OMRON Healthcare — "Guardar en la nube" sincroniza todo (variables, equipo e histórico) contra Firebase para que el resto del equipo vea los mismos datos. El .json queda como respaldo local u offline.</footer>
+</div>
+
+<script>
+let state = {
+  variables: [
+    {id:'v1', name:'Clientes alcanzados', weight:25},
+    {id:'v2', name:'Clientes nuevos alcanzados', weight:25},
+    {id:'v3', name:'Unidades vendidas', weight:30},
+    {id:'v4', name:'PDV ejecutados (POP)', weight:20}
+  ],
+  people: [],
+  history: []
+};
+let uid = 5;
+
+function newId(prefix){ return prefix + '_' + Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+
+function ensurePersonValues(person){
+  state.variables.forEach(v=>{
+    if(!person.values[v.id]) person.values[v.id] = {real:0, objetivo:0};
+  });
+}
+
+function addVariable(){
+  const nameEl = document.getElementById('newVarName');
+  const weightEl = document.getElementById('newVarWeight');
+  const name = nameEl.value.trim();
+  const weight = parseFloat(weightEl.value);
+  if(!name){ nameEl.focus(); return; }
+  if(isNaN(weight) || weight < 0){ weightEl.focus(); return; }
+  const id = newId('v');
+  state.variables.push({id, name, weight});
+  state.people.forEach(p=> p.values[id] = {real:0, objetivo:0});
+  nameEl.value=''; weightEl.value='';
+  renderAll();
+}
+
+function removeVariable(id){
+  state.variables = state.variables.filter(v=>v.id!==id);
+  state.people.forEach(p=> delete p.values[id]);
+  renderAll();
+}
+
+function addPerson(){
+  const nameEl = document.getElementById('newPersonName');
+  const terrEl = document.getElementById('newPersonTerr');
+  const name = nameEl.value.trim();
+  if(!name){ nameEl.focus(); return; }
+  const person = {id:newId('p'), name, territorio:terrEl.value.trim(), values:{}};
+  ensurePersonValues(person);
+  state.people.push(person);
+  nameEl.value=''; terrEl.value='';
+  renderAll();
+}
+
+function removePerson(id){
+  state.people = state.people.filter(p=>p.id!==id);
+  renderAll();
+}
+
+function totalWeight(){
+  return state.variables.reduce((s,v)=> s + (parseFloat(v.weight)||0), 0);
+}
+
+function computeScoreFor(variables, person){
+  const tw = variables.reduce((s,v)=> s + (parseFloat(v.weight)||0), 0);
+  if(tw <= 0) return {score:0, tier:tierFor(0)};
+  let sum = 0;
+  variables.forEach(v=>{
+    const val = (person.values && person.values[v.id]) || {real:0,objetivo:0};
+    const real = parseFloat(val.real)||0;
+    const obj = parseFloat(val.objetivo)||0;
+    const logro = obj > 0 ? Math.min(real/obj, 1) : 0;
+    sum += logro * (parseFloat(v.weight)||0);
+  });
+  const score = (sum / tw) * 100;
+  return {score, tier: tierFor(score)};
+}
+
+function computePerson(person){
+  return computeScoreFor(state.variables, person);
+}
+
+function tierFor(score){
+  if(score >= 90) return {label:'100%', cls:'r-full'};
+  if(score >= 80) return {label:'75%', cls:'r-mid'};
+  if(score >= 70) return {label:'50%', cls:'r-low'};
+  return {label:'No cobra', cls:'r-none'};
+}
+
+function renderVarConfig(){
+  const tbody = document.getElementById('varTableBody');
+  tbody.innerHTML = '';
+  state.variables.forEach(v=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><input type="text" value="${escapeHtml(v.name)}" oninput="updateVarName('${v.id}', this.value)"></td>
+      <td><input type="number" min="0" max="100" value="${v.weight}" oninput="updateVarWeight('${v.id}', this.value)"></td>
+      <td><button class="del-btn" title="Eliminar variable" onclick="removeVariable('${v.id}')">✕</button></td>
+    `;
+    tbody.appendChild(tr);
+  });
+  updateWeightSumDisplay();
+}
+
+function updateVarName(id, name){
+  const v = state.variables.find(v=>v.id===id);
+  if(v) v.name = name;
+  renderPeopleHeader();
+}
+
+function updateVarWeight(id, weight){
+  const v = state.variables.find(v=>v.id===id);
+  if(v) v.weight = parseFloat(weight)||0;
+  updateWeightSumDisplay();
+  recalcAllRows();
+}
+
+function updateWeightSumDisplay(){
+  const el = document.getElementById('weightSum');
+  const tw = totalWeight();
+  const badge = Math.abs(tw-100) < 0.01
+    ? `<span class="badge badge-ok">Suma correcta</span>`
+    : `<span class="badge badge-warn">No suma 100% — se normaliza automáticamente</span>`;
+  el.innerHTML = `Suma de pesos: ${tw.toFixed(1)}% ${badge}`;
+}
+
+function renderPeopleHeader(){
+  const head = document.getElementById('peopleHead');
+  let html = `<th>Nombre</th><th>Territorio</th>`;
+  state.variables.forEach(v=>{
+    html += `<th class="var-th">${escapeHtml(v.name)}<br><span style="font-weight:400;color:var(--muted);font-size:10px">Real / Objetivo</span></th>`;
+  });
+  html += `<th>Puntaje</th><th>Resultado</th><th></th>`;
+  head.innerHTML = html;
+}
+
+function renderPeopleBody(){
+  const body = document.getElementById('peopleBody');
+  body.innerHTML = '';
+  state.people.forEach(p=>{
+    ensurePersonValues(p);
+    const tr = document.createElement('tr');
+    tr.id = 'row_'+p.id;
+    let cells = `
+      <td><input type="text" value="${escapeHtml(p.name)}" oninput="updatePersonField('${p.id}','name',this.value)"></td>
+      <td><input type="text" value="${escapeHtml(p.territorio||'')}" oninput="updatePersonField('${p.id}','territorio',this.value)"></td>
+    `;
+    state.variables.forEach(v=>{
+      const val = p.values[v.id] || {real:0,objetivo:0};
+      cells += `
+        <td>
+          <div class="pair">
+            <input type="number" min="0" value="${val.real}" oninput="updatePersonValue('${p.id}','${v.id}','real',this.value)">
+            <span>/</span>
+            <input type="number" min="0" value="${val.objetivo}" oninput="updatePersonValue('${p.id}','${v.id}','objetivo',this.value)">
+          </div>
+        </td>`;
+    });
+    cells += `
+      <td class="score-cell" id="score_${p.id}"></td>
+      <td id="result_${p.id}"></td>
+      <td><button class="del-btn" title="Eliminar persona" onclick="removePerson('${p.id}')">✕</button></td>
+    `;
+    tr.innerHTML = cells;
+    body.appendChild(tr);
+  });
+  recalcAllRows();
+}
+
+function updatePersonField(id, field, value){
+  const p = state.people.find(p=>p.id===id);
+  if(p) p[field] = value;
+}
+
+function updatePersonValue(personId, varId, field, value){
+  const p = state.people.find(p=>p.id===personId);
+  if(!p) return;
+  if(!p.values[varId]) p.values[varId] = {real:0,objetivo:0};
+  p.values[varId][field] = parseFloat(value)||0;
+  updateRowResult(p);
+}
+
+function updateRowResult(person){
+  const {score, tier} = computePerson(person);
+  const scoreCell = document.getElementById('score_'+person.id);
+  const resultCell = document.getElementById('result_'+person.id);
+  if(scoreCell) scoreCell.textContent = score.toFixed(1);
+  if(resultCell) resultCell.innerHTML = `<span class="result-pill ${tier.cls}">${tier.label}</span>`;
+}
+
+function recalcAllRows(){
+  state.people.forEach(p=> updateRowResult(p));
+}
+
+function escapeHtml(str){
+  return String(str).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+
+function saveHistory(){
+  const labelEl = document.getElementById('newHistLabel');
+  const label = labelEl.value.trim();
+  if(!label){ labelEl.focus(); return; }
+  const entry = {
+    id: newId('h'),
+    label,
+    savedAt: new Date().toLocaleDateString('es-AR'),
+    variables: JSON.parse(JSON.stringify(state.variables)),
+    people: JSON.parse(JSON.stringify(state.people))
+  };
+  state.history.unshift(entry);
+  labelEl.value = '';
+  renderHistory();
+}
+
+function removeHistory(id){
+  state.history = state.history.filter(h=>h.id!==id);
+  renderHistory();
+}
+
+function loadHistory(id){
+  const entry = state.history.find(h=>h.id===id);
+  if(!entry) return;
+  const ok = confirm('Esto reemplaza los datos actuales del panel (variables y equipo) por los del período "'+entry.label+'". ¿Continuar?');
+  if(!ok) return;
+  state.variables = JSON.parse(JSON.stringify(entry.variables));
+  state.people = JSON.parse(JSON.stringify(entry.people));
+  renderAll();
+}
+
+function toggleHist(id){
+  const el = document.getElementById('hist_'+id);
+  if(el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+
+function renderHistory(){
+  const container = document.getElementById('historyList');
+  if(state.history.length === 0){
+    container.innerHTML = `<p class="hist-empty">Todavía no guardaste ningún período. Cargá los datos del mes en "Equipo" y usá "Guardar período actual".</p>`;
+    return;
+  }
+  container.innerHTML = '';
+  state.history.forEach(entry=>{
+    const wrap = document.createElement('div');
+    wrap.className = 'hist-entry';
+    const rowsHtml = entry.people.map(p=>{
+      const {score, tier} = computeScoreFor(entry.variables, p);
+      return `<tr><td>${escapeHtml(p.name)}</td><td>${escapeHtml(p.territorio||'')}</td><td class="score-cell">${score.toFixed(1)}</td><td><span class="result-pill ${tier.cls}">${tier.label}</span></td></tr>`;
+    }).join('') || `<tr><td colspan="4" style="color:var(--muted)">Sin personas cargadas en este período.</td></tr>`;
+    wrap.innerHTML = `
+      <div class="hist-header" onclick="toggleHist('${entry.id}')">
+        <div><b>${escapeHtml(entry.label)}</b><span class="hist-meta">guardado ${entry.savedAt} · ${entry.people.length} persona(s)</span></div>
+        <div class="hist-actions">
+          <button class="btn-secondary" onclick="event.stopPropagation(); loadHistory('${entry.id}')">Cargar al panel</button>
+          <button class="del-btn" onclick="event.stopPropagation(); removeHistory('${entry.id}')" title="Eliminar período">✕</button>
+        </div>
+      </div>
+      <div class="hist-detail" id="hist_${entry.id}" style="display:none;">
+        <table class="calc-hist">
+          <thead><tr><th>Nombre</th><th>Territorio</th><th>Puntaje</th><th>Resultado</th></tr></thead>
+          <tbody>${rowsHtml}</tbody>
+        </table>
+      </div>
+    `;
+    container.appendChild(wrap);
+  });
+}
+
+function renderAll(){
+  renderVarConfig();
+  renderPeopleHeader();
+  renderPeopleBody();
+  renderHistory();
+}
+
+const FIREBASE_URL = 'https://omron-7e32f-default-rtdb.firebaseio.com';
+const FIREBASE_PATH = 'variable_omron_equipo';
+
+function setSyncStatus(text, cls){
+  const el = document.getElementById('syncStatus');
+  if(!el) return;
+  el.textContent = text;
+  el.className = 'sync-status' + (cls ? ' ' + cls : '');
+}
+
+async function saveToFirebase(){
+  setSyncStatus('Guardando…');
+  try{
+    const res = await fetch(`${FIREBASE_URL}/${FIREBASE_PATH}.json`, {
+      method: 'PUT',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(state)
+    });
+    if(!res.ok) throw new Error('HTTP ' + res.status);
+    const now = new Date().toLocaleString('es-AR');
+    setSyncStatus('Guardado en la nube · ' + now, 'ok');
+  }catch(err){
+    setSyncStatus('No se pudo guardar en la nube', 'err');
+    alert('No se pudo guardar en Firebase: ' + err.message);
+  }
+}
+
+async function loadFromFirebase(silent){
+  if(!silent) setSyncStatus('Cargando…');
+  try{
+    const res = await fetch(`${FIREBASE_URL}/${FIREBASE_PATH}.json`);
+    if(!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    if(!data){
+      setSyncStatus(silent ? 'Sin datos guardados todavía en la nube' : 'No hay datos guardados en la nube', silent ? '' : 'err');
+      if(!silent) alert('Todavía no hay datos guardados en Firebase para este equipo.');
+      return false;
+    }
+    if(!silent){
+      const ok = confirm('Esto reemplaza los datos actuales del panel por los guardados en la nube. ¿Continuar?');
+      if(!ok){ setSyncStatus('Carga cancelada'); return false; }
+    }
+    if(!data.history) data.history = [];
+    if(!data.people) data.people = [];
+    if(!data.variables) data.variables = [];
+    state = data;
+    renderAll();
+    const now = new Date().toLocaleString('es-AR');
+    setSyncStatus('Sincronizado desde la nube · ' + now, 'ok');
+    return true;
+  }catch(err){
+    setSyncStatus('Sin conexión con la nube', 'err');
+    if(!silent) alert('No se pudo cargar desde Firebase: ' + err.message);
+    return false;
+  }
+}
+
+function exportData(){
+  const blob = new Blob([JSON.stringify(state, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'variable_omron_datos.json';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+document.getElementById('importFile').addEventListener('change', function(e){
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(evt){
+    try{
+      const data = JSON.parse(evt.target.result);
+      if(data.variables && data.people){
+        state = data;
+        if(!state.history) state.history = [];
+        renderAll();
+      } else {
+        alert('El archivo no tiene el formato esperado.');
+      }
+    }catch(err){
+      alert('No se pudo leer el archivo JSON.');
+    }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+});
+
+renderAll();
+loadFromFirebase(true);
+</script>
+
+</body>
+</html>
